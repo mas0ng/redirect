@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Collection and Redirect</title>
+    <script>
+        function getData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect');
+
+            if (!redirectUrl) {
+                console.error('No redirect URL provided');
+                return;
+            }
+
+            const data = {
+                ipAddress: '',
+                browserType: navigator.userAgent,
+                deviceType: getDeviceType(),
+                screenResolution: `${screen.width}x${screen.height}`,
+                language: navigator.language,
+                connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+                networkSpeed: navigator.connection ? navigator.connection.downlink : 'unknown',
+                platform: navigator.platform,
+                hardwareConcurrency: navigator.hardwareConcurrency,
+                deviceMemory: navigator.deviceMemory || 'unknown',
+                cookiesEnabled: navigator.cookieEnabled,
+                installedFonts: detectFonts(),
+                plugins: Array.from(navigator.plugins).map(plugin => plugin.name),
+                redirectUrl: redirectUrl
+            };
+
+            // Fetch the IP address using a public API
+            fetch('https://api.ipify.org?format=json')
+                .then(response => response.json())
+                .then(ipData => {
+                    data.ipAddress = ipData.ip;
+                    sendToServer(data, redirectUrl);
+                })
+                .catch(error => console.error('Error fetching IP address:', error));
+        }
+
+        function getDeviceType() {
+            const ua = navigator.userAgent;
+            if (/mobile/i.test(ua)) return 'Mobile';
+            if (/tablet/i.test(ua)) return 'Tablet';
+            return 'Desktop';
+        }
+
+        function detectFonts() {
+            const fontList = [
+                'Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS', 'Arial Black', 'Impact'
+            ];
+            const testString = "abcdefghijklmnopqrstuvwxyz0123456789";
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            const baseWidth = context.measureText(testString).width;
+
+            const detectedFonts = [];
+            fontList.forEach(function(font) {
+                context.font = `72px ${font}, sans-serif`;
+                if (context.measureText(testString).width !== baseWidth) {
+                    detectedFonts.push(font);
+                }
+            });
+            return detectedFonts;
+        }
+
+        function sendToServer(data, redirectUrl) {
+            fetch('https://03987a31-8d61-4cb2-b877-30d97d24b96e-00-2eao6d1qcnwfz.janeway.replit.dev/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('Data sent successfully:', result);
+                window.location.href = redirectUrl; // Redirect after sending data
+            })
+            .catch(error => {
+                console.error('Error sending data:', error);
+                window.location.href = redirectUrl; // Redirect even if there’s an error
+            });
+        }
+
+        window.onload = getData;
+    </script>
+</head>
+<body>
+    <h1>Data Collection and Redirect Example</h1>
+    <p>Your data is being collected and sent to the server, then you will be redirected...</p>
+</body>
+</html>
